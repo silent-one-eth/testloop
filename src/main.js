@@ -7,7 +7,8 @@ Vue.config.productionTip = false;
 const state = Vue.observable({ 
   account: null,
   loopringAccountId: null,
-  loopringApiKey: null
+  loopringApiKey: null,
+  chainId: 0,
 });
 
 Vue.prototype.$state = state;

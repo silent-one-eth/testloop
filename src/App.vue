@@ -12,12 +12,7 @@
       </div>
       <multi-wallet />
     </div>
-
-    <section v-if="!connected">
-      <h2>Please connect your wallet.</h2>
-    </section>
-
-    <router-view v-else />
+    <router-view />
   </div>
 </template>
 
@@ -25,17 +20,13 @@
 import Glitch from "./components/Glitch.vue";
 import MultiWallet from "./components/MultiWallet.vue";
 export default {
+  name: "App",
   components: { Glitch, MultiWallet },
-  data: () => ({
-
-  }),
-  computed:{
-    connected(){
-      return this.$state.account != null;
+  data: () => ({}),
+  computed: {
+    state() {
+      return this.$state;
     },
-    loopringConnected(){
-      return this.$state.loopringAccountId != null;
-    }
   },
 };
 </script>
@@ -45,6 +36,8 @@ export default {
 html {
   width: 100vw;
   height: 100vh;
+
+  font-size: 20pt;
 }
 body {
   background: #232526; /* fallback for old browsers */
@@ -63,13 +56,14 @@ body {
   margin-right: 1em;
 }
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+  font-family: "Patua One", Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: white;
-  max-width: 900px;
+  color: #effaffda;
+  max-width: 1200px;
   margin: auto;
+  text-shadow: rgba(0, 0, 0, 0.2) 1px 1px 2px;
 }
 #nav {
   padding: 16px 30px;
@@ -82,8 +76,8 @@ body {
   h1 {
     font-family: "Permanent Marker", cursive;
     letter-spacing: 0.09em;
-    font-size: 32pt;
-    line-height: 32pt;
+    font-size: 2.5rem;
+    font-size: 2.5rem;
     font-weight: 800;
     padding: 10pt;
     border-radius: 16pt;
@@ -95,8 +89,8 @@ body {
   a {
     transition: all 0.1s ease-out;
     font-family: "Permanent Marker", cursive;
-    font-size: 16pt;
-    line-height: 16pt;
+    font-size: 1.5rem;
+    line-height: 1.5rem;
     font-weight: bold;
     color: #098bbe;
     text-decoration: none;

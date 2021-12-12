@@ -1,7 +1,12 @@
 <template>
   <div>
+    <div v-if="notMain">
+      <strong style="font-size: 0.6rem; color: red; font-weight: light"
+        >Warning!</strong
+      >
+    </div>
     <div class="wallet-menu disabled" v-if="web3Working">
-      Wallet: {{ web3WorkingMessage }}
+      {{ web3WorkingMessage }}
     </div>
     <div class="wallet-menu" v-else-if="isConnected">
       {{ hasENSName ? hasENSName : account }}
@@ -15,10 +20,15 @@
       </span>
     </div>
     <div class="wallet-menu" v-else-if="isMetaMaskEnable" @click="doInitWallet">
-      Connect wallet
+      Login
     </div>
     <div class="wallet-menu" v-else @click="doDisplayWeb3Infos">
       Web3 Not Found (?)
+    </div>
+    <div v-if="notMain">
+      <strong style="font-size: 0.6rem; color: red; font-weight: light"
+        >Not on ethereum main net.</strong
+      >
     </div>
   </div>
 </template>
@@ -60,8 +70,17 @@ export default {
       return this.loopringAccountInfo.accountId;
     },
     isLoopringEnabled() {
-      return this.loopringApiKey != null;
+      return this.$state.loopringApiKey != null;
     },
+    notMain() {
+      return this.$state.chainId != 1;
+    },
+  },
+  created() {
+    const web3 = new Web3(window.ethereum);
+    this.$state.chainId = web3.currentProvider.chainId;
+    web3.currentProvider.on("accountsChanged", this.onAccountChanged);
+    web3.currentProvider.on("chainChanged", this.onChainChanged);
   },
   methods: {
     doDisplayWeb3Infos() {
@@ -77,11 +96,11 @@ export default {
       this.account = accounts[0];
       this.$state.account = accounts[0];
       await this.tryDisplayENS();
-      window.ethereum.on("accountsChanged", this.onAccountChanged);
       this.initLoopring();
       this.web3Working = false;
     },
     async initLoopring() {
+      const self = this;
       const owner = this.account;
       const exchange = new ExchangeAPI({ chainId: ChainId.MAINNET }),
         userApi = new UserAPI({ chainId: ChainId.MAINNET }),
@@ -107,10 +126,11 @@ export default {
         const eddsakey = await generateKeyPair({
           web3,
           address: owner,
-          exchangeAddress: this.loopringExchangeInfo.exchangeAddress,
-          keyNonce: this.loopringAccountInfo.nonce - 1,
+          exchangeAddress: self.loopringExchangeInfo.exchangeAddress,
+          keyNonce: self.loopringAccountInfo.nonce - 1,
           walletType: ConnectorNames.MetaMask,
         });
+        debugger;
         const apiKeyResponse = await userApi.getUserApiKey(
           { accountId: this.loopringAccountNb },
           eddsakey.sk
@@ -122,13 +142,31 @@ export default {
       }
     },
     async tryDisplayENS() {
-      if (this.ens == null) {
-        const provider = window.ethereum;
-        this.ens = new ENS({ provider, network: "1" });
+      try {
+        if (this.ens == null) {
+          const provider = window.ethereum;
+          this.ens = new ENS({ provider, network: "1" });
+        }
+        this.ensName = await this.ens.reverse(this.account);
+      } catch (error) {
+        console.log("Could not fetch ENS...");
       }
-      this.ensName = await this.ens.reverse(this.account);
     },
-    async onAccountChanged() {
+    onAccountChanged() {
+      const web3 = new Web3(window.ethereum);
+      this.$state.chainId = web3.currentProvider.chainId;
+      this.$state.loopringApiKey = null;
+      this.$state.loopringAccountId = null;
+      this.$state.account = null;
+      this.ensName = null;
+      this.account = null;
+    },
+    async onChainChanged(_chainId) {
+      const web3 = new Web3(window.ethereum);
+      this.$state.chainId = web3.currentProvider.chainId;
+      this.$state.loopringApiKey = null;
+      this.$state.loopringAccountId = null;
+      this.$state.account = null;
       this.ensName = null;
       this.account = null;
     },
@@ -140,13 +178,13 @@ export default {
 .wallet-menu {
   display: flex;
   align-items: center;
+  justify-content: center;
   position: relative;
   top: 2pt;
   border: 1.2pt solid #00b7ffda;
   border-radius: 8pt;
   padding: 4pt 9pt;
-  font-family: "Fira Mono", monospace;
-  font-size: 8pt;
+  font-size: 0.7rem;
   color: #e0f6ff;
   background-color: #0c425748;
   cursor: pointer;
@@ -157,21 +195,17 @@ export default {
 }
 .loopring-logo {
   box-shadow: #23252673 1px 1px 1px;
-  margin-left: 1em;
-  background: #ada996; /* fallback for old browsers */
+  margin-left: 0.5em;
+  background: #eaeaea; /* fallback for old browsers */
   background: -webkit-linear-gradient(
     to bottom right,
     #eaeaea,
-    #dbdbdb,
-    #f2f2f2,
-    #ada996
+    #f2f2f2
   ); /* Chrome 10-25, Safari 5.1-6 */
   background: linear-gradient(
     to bottom right,
     #eaeaea,
-    #dbdbdb,
-    #f2f2f2,
-    #ada996
+    #f2f2f2
   ); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
 
   display: inline-block;
@@ -180,8 +214,8 @@ export default {
   border-radius: 50%;
   img {
     position: relative;
-    top: 1px;
-    left: 1px;
+    top: 0.01rem;
+    left: 0.03rem;
   }
 }
 .wallet-menu.disabled {
